@@ -1,0 +1,156 @@
+-- Define the list of available jobs
+local jobs = {
+    police = {name = "Police Officer", salary = 5000, actions = {"Arrest", "Patrol"}},
+    medic = {name = "Paramedic", salary = 4500, actions = {"Heal", "Respond to Emergency"}},
+    delivery = {name = "Delivery Driver", salary = 3000, actions = {"Deliver Packages"}},
+    taxi = {name = "Taxi Driver", salary = 3500, actions = {"Pick up Passengers", "Drive to Destination"}}
+}
+
+-- Create a table to keep track of players and their jobs
+local playerJobs = {}
+
+-- Create a table to store player money in the bank
+local playerBank = {}
+
+-- Register the command to select a job
+RegisterCommand("selectjob", function(source, args, rawCommand)
+    local player = source
+
+    -- Check if the player has provided a valid job
+    local jobName = args[1]
+    if not jobName or not jobs[jobName] then
+        TriggerClientEvent('chatMessage', player, '^1Error: ^7Invalid job. Use /selectjob [job_name]')
+        return
+    end
+
+    -- Set the player's job
+    playerJobs[player] = {name = jobName, actions = {}}
+
+    -- Send a confirmation message to the player
+    TriggerClientEvent('chatMessage', player, '^2Success: ^7You are now a ' .. jobs[jobName].name)
+end, false)
+
+-- Register the command to get paid
+RegisterCommand("getpaid", function(source, args, rawCommand)
+    local player = source
+
+    -- Check if the player has a job
+    local job = playerJobs[player]
+    if not job then
+        TriggerClientEvent('chatMessage', player, '^1Error: ^7You must select a job before getting paid.')
+        return
+    end
+
+    -- Add the salary to the player's wallet
+    TriggerEvent('es:getPlayerFromId', player, function(user)
+        user.addMoney(jobs[job.name].salary)
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You received a salary of ' .. jobs[job.name].salary .. '$ as a ' .. jobs[job.name].name)
+    end)
+end, false)
+
+-- Register the command to perform job-specific actions
+RegisterCommand("jobaction", function(source, args, rawCommand)
+    local player = source
+
+    -- Check if the player has a job
+    local job = playerJobs[player]
+    if not job then
+        TriggerClientEvent('chatMessage', player, '^1Error: ^7You must select a job to perform actions.')
+        return
+    end
+
+    -- Check if the player provided a valid action
+    local action = args[1]
+    if not action or not table.contains(jobs[job.name].actions, action) then
+        TriggerClientEvent('chatMessage', player, '^1Error: ^7Invalid action. Use /jobaction [action]')
+        return
+    end
+
+    -- Perform the job-specific action
+    if action == "Arrest" then
+        -- Code to arrest a player
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You arrested a suspect.')
+    elseif action == "Heal" then
+        -- Code to heal a player
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You healed a patient.')
+    elseif action == "Deliver Packages" then
+        -- Code to deliver packages
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You delivered packages.')
+    elseif action == "Pick up Passengers" then
+        -- Code to pick up passengers
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You picked up passengers.')
+    elseif action == "Drive to Destination" then
+        -- Code to drive to a destination
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You drove to the destination.')
+    elseif action == "Respond to Emergency" then
+        -- Code to respond to an emergency
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You responded to an emergency.')
+    end
+end, false)
+
+-- Register the command to check the player's current job
+RegisterCommand("checkjob", function(source, args, rawCommand)
+    local player = source
+
+    -- Check if the player has a job
+    local job = playerJobs[player]
+    if not job then
+        TriggerClientEvent('chatMessage', player, '^1Error: ^7You currently do not have a job.')
+        return
+    end
+
+    -- Send a message to the player with their current job
+    TriggerClientEvent('chatMessage', player, '^7Your current job is: ' .. jobs[job.name].name)
+end, false)
+
+-- Register the command to deposit money into the bank
+RegisterCommand("deposit", function(source, args, rawCommand)
+    local player = source
+
+    -- Check if the player has provided an amount to deposit
+    local amount = tonumber(args[1])
+    if not amount or amount <= 0 then
+        TriggerClientEvent('chatMessage', player, '^1Error: ^7Invalid amount. Use /deposit [amount]')
+        return
+    end
+
+    -- Check if the player has enough money
+    TriggerEvent('es:getPlayerFromId', player, function(user)
+        if user.getMoney() < amount then
+            TriggerClientEvent('chatMessage', player, '^1Error: ^7You do not have enough money to deposit.')
+            return
+        end
+
+        -- Deposit money into the bank
+        user.removeMoney(amount)
+        playerBank[player] = (playerBank[player] or 0) + amount
+
+        -- Send a confirmation message to the player
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You deposited ' .. amount .. '$ into the bank.')
+    end)
+end, false)
+
+-- Register the command to withdraw money from the bank
+RegisterCommand("withdraw", function(source, args, rawCommand)
+    local player = source
+
+    -- Check if the player has provided an amount to withdraw
+    local amount = tonumber(args[1])
+    if not amount or amount <= 0 then
+        TriggerClientEvent('chatMessage', player, '^1Error: ^7Invalid amount. Use /withdraw [amount]')
+        return
+    end
+
+    -- Check if the player has enough money in the bank
+    if not playerBank[player] or playerBank[player] < amount then
+        TriggerClientEvent('chatMessage', player, '^1Error: ^7You do not have enough money in the bank to withdraw.')
+        return
+    end
+
+    -- Withdraw money from the bank
+    TriggerEvent('es:getPlayerFromId', player, function(user)
+        user.addMoney(amount)
+        playerBank[player] = playerBank[player] - amount
+
+        -- Send a confirmation message to the player
+        TriggerClientEvent('chatMessage', player, '^2Success: ^7You
